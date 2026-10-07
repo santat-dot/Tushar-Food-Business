@@ -2,14 +2,37 @@ import { useLanguage } from "../context/LanguageContext";
 
 export default function FilterSortBar({ f, resultCount }) {
   const { t } = useLanguage();
+  const minPrice = 50;
+  const maxPrice = 1200;
+  const priceProgress = ((f.priceMax - minPrice) / (maxPrice - minPrice)) * 100;
+
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", padding: "16px 0", borderBottom: "1px solid var(--line)", marginBottom: 24 }}>
+    <div className="filter-sort-bar" style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", padding: "16px 0", borderBottom: "1px solid var(--line)", marginBottom: 24 }}>
       <span style={{ fontSize: 13.5, color: "var(--ink-soft)", marginRight: "auto" }}>{t("filter_results", { count: resultCount })}</span>
 
-      <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-        {t("price")} ≤ ₹{f.priceMax}
-        <input type="range" min="50" max="1200" step="50" value={f.priceMax} onChange={(e) => f.setPriceMax(Number(e.target.value))} />
-      </label>
+      <div className="filter-price">
+        <div className="filter-price-heading">
+          <label htmlFor="filter-price-range">{t("price")}</label>
+          <output htmlFor="filter-price-range" aria-live="polite">≤ ₹{f.priceMax}</output>
+        </div>
+        <input
+          id="filter-price-range"
+          className="filter-price-range"
+          type="range"
+          min={minPrice}
+          max={maxPrice}
+          step="50"
+          value={f.priceMax}
+          aria-label={t("price")}
+          aria-valuetext={`₹${f.priceMax}`}
+          style={{ "--price-progress": `${priceProgress}%` }}
+          onChange={(e) => f.setPriceMax(Number(e.target.value))}
+        />
+        <div className="filter-price-bounds" aria-hidden="true">
+          <span>₹{minPrice}</span>
+          <span>₹{maxPrice}</span>
+        </div>
+      </div>
 
       <select value={f.availability} onChange={(e) => f.setAvailability(e.target.value)} style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--line)", fontSize: 13 }}>
         <option value="all">{t("availability")}</option>

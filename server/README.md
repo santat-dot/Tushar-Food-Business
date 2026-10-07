@@ -1,8 +1,9 @@
 # Tushar Food Business API
 
 The Express API and MongoDB database are shared by the customer storefront and the standalone admin panel.
-The first API startup seeds the database from the existing storefront catalog only when the category or food
-collection is empty.
+A fresh database is seeded with the 30-item starter catalog. On an existing database, a one-time migration
+removes retired seeded items and updates the starter products' category assignments. It preserves admin-added
+products and saved orders.
 
 ## Local setup
 
@@ -30,5 +31,6 @@ than `http://localhost:3001`. Set the same variable in
 - `/orders` accepts customer checkout orders, and `/orders/:id/status` returns the public tracking status only.
 - `/admin/auth/login` issues an expiring JWT. All other `/admin/*` routes require that bearer token.
 - Admin CRUD endpoints cover categories, food items, orders, and gallery uploads.
+- Food items can be reassigned to another category in the admin; the category page displays live item counts.
 - A category cannot be removed while it still has food items; remove or reassign its items first.
 - Gallery uploads are limited to 10 MB and stored in `server/uploads`.

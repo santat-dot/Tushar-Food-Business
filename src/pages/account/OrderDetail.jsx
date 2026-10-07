@@ -3,6 +3,7 @@ import { trackingSteps } from "../../data/orders";
 import { useOrders } from "../../context/OrdersContext";
 import ReorderButtons from "../../components/ReorderButtons";
 import { useLanguage } from "../../context/LanguageContext";
+import { downloadOrderReceipt } from "../../utils/printOrderReceipt";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -29,6 +30,11 @@ export default function OrderDetail() {
         {trackingSteps.map((step, i) => (
           <span key={step} className={`badge ${i <= currentIndex ? "badge-available" : "badge-soldout"}`}>{t(`order_status_${step.replace(/-/g, "_")}`)}</span>
         ))}
+      </div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+        <button className="btn btn-outline btn-sm" type="button" onClick={() => {
+          if (!downloadOrderReceipt(order)) window.alert(t("receipt_download_failed"));
+        }}>{t("download_order_receipt")}</button>
       </div>
       <div style={{ marginTop: 18 }}><ReorderButtons items={order.items} /></div>
       <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 20 }}>{t("address")}: {order.address}</p>

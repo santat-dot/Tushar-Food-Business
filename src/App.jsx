@@ -20,8 +20,6 @@ import OccasionPlanner from "./pages/OccasionPlanner";
 import BuildYourMeal from "./pages/BuildYourMeal";
 import SharedTable from "./pages/SharedTable";
 import Offers from "./pages/Offers";
-import AccountAuth from "./pages/account/AccountAuth";
-import RequireAuth from "./components/RequireAuth";
 import NotFound from "./pages/NotFound";
 import BatchInfo from "./pages/BatchInfo";
 
@@ -48,10 +46,8 @@ export default function App() {
         <Route path="/product/:slug" element={<Product />} />
         <Route path="/search" element={<Search />} />
         <Route path="/offers" element={<Offers />} />
-        <Route path="/login" element={<AccountAuth />} />
-        <Route path="/signup" element={<AccountAuth />} />
-        <Route path="/cart" element={<RequireAuth message="Please log in or sign up to use your cart."><Cart /></RequireAuth>} />
-        <Route path="/checkout" element={<RequireAuth message="Please log in or sign up to place your order."><Checkout /></RequireAuth>} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/order/:id" element={<OrderConfirmation />} />
         <Route path="/track-order" element={<TrackOrder />} />
         <Route path="/kitchen-stories" element={<KitchenStories />} />

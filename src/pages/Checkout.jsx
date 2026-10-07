@@ -15,16 +15,43 @@ export default function Checkout() {
   const { t, lang, formatCurrency } = useLanguage();
   const navigate = useNavigate();
 
+  const [guestDetails, setGuestDetails] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    label: "Home",
+    line: "",
+    landmark: "",
+    city: "",
+    state: "Maharashtra",
+    pincode: "",
+  });
   const [addrId, setAddrId] = useState(defaultAddress?.id);
-  const address = user.addresses.find((a) => a.id === addrId) || defaultAddress;
+  const address = user ? (user.addresses.find((a) => a.id === addrId) || defaultAddress) : {
+    id: "guest-checkout",
+    label: guestDetails.label,
+    name: guestDetails.name,
+    phone: guestDetails.phone,
+    line: guestDetails.line,
+    landmark: guestDetails.landmark,
+    city: guestDetails.city,
+    state: guestDetails.state,
+    pincode: guestDetails.pincode,
+  };
   const [instructions, setInstructions] = useState("");
   const [slot, setSlot] = useState("morning");
   const [payment, setPayment] = useState("upi");
   const [placing, setPlacing] = useState(false);
   const [placementError, setPlacementError] = useState("");
 
+  const hasGuestAddress = !user && guestDetails.name && guestDetails.phone && guestDetails.line && guestDetails.city && guestDetails.state && guestDetails.pincode;
+  const hasSavedAddress = Boolean(user && address);
+
   async function handlePlaceOrder(e) {
     e.preventDefault();
+    if (!user && !hasGuestAddress) {
+      setPlacementError("Please complete your delivery details to continue.");
+      return;
+    }
     if (!address) return;
     setPlacing(true);
     setPlacementError("");
@@ -32,15 +59,18 @@ export default function Checkout() {
       const orderId = "TFB" + Math.floor(10000 + Math.random() * 89999);
       const s = deliverySlots.find((x) => x.id === slot);
       const order = {
-        id: orderId, date: new Date().toISOString().slice(0, 10), status: "confirmed", payment: payment.toUpperCase(),
+        id: orderId, date: new Date().toISOString().slice(0, 10), status: "confirmed",
+        payment: payment === "razorpay" ? "Razorpay (prototype — no charge)" : payment.toUpperCase(),
         items: items.map((i) => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price })),
         address: `${address.line}${address.landmark ? ", " + address.landmark : ""}, ${address.city}, ${address.state} - ${address.pincode}`,
-        phone: address.phone || user.phone, customer: user.name, instructions,
+        phone: address.phone || user?.phone || guestDetails.phone,
+        customer: user?.name || guestDetails.name,
+        instructions,
         slot: `${s?.label}, ${s?.window}`, total, savings: festivalSavings + bulkDiscount + couponDiscount,
       };
       const savedOrder = await submitCustomerOrder(order);
       addOrder({ ...order, ...savedOrder, status: order.status });
-      earnPoints(Math.floor(total / 10), `Order ${orderId}`);
+      if (user) earnPoints(Math.floor(total / 10), `Order ${orderId}`);
       clearCart();
       navigate(`/order/${orderId}`, { state: order });
     } catch (error) {
@@ -60,18 +90,57 @@ export default function Checkout() {
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 40 }} className="checkout-grid">
         <form onSubmit={handlePlaceOrder}>
           <Section title={t("checkout_delivering_to")}>
-            {address ? (
-              <div className="card addr-card is-selected">
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <strong>{localizeAddressLabel(address.label, lang)} · {user.name}</strong>
-                  <Link to="/account/addresses" style={{ fontSize: 13, textDecoration: "underline" }}>{t("checkout_manage")}</Link>
+            {user ? (
+              address ? (
+                <div className="card addr-card is-selected">
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                    <strong>{localizeAddressLabel(address.label, lang)} · {user.name}</strong>
+                    <Link to="/account/addresses" style={{ fontSize: 13, textDecoration: "underline" }}>{t("checkout_manage")}</Link>
+                  </div>
+                  <p style={{ fontSize: 14, color: "var(--ink-soft)", marginTop: 6, lineHeight: 1.55 }}>
+                    {address.line}{address.landmark ? `, ${address.landmark}` : ""}, {address.city}, {address.state} – {address.pincode}<br />📞 {address.phone || user.phone}
+                  </p>
                 </div>
-                <p style={{ fontSize: 14, color: "var(--ink-soft)", marginTop: 6, lineHeight: 1.55 }}>
-                  {address.line}{address.landmark ? `, ${address.landmark}` : ""}, {address.city}, {address.state} – {address.pincode}<br />📞 {address.phone || user.phone}
-                </p>
+              ) : <p>{t("checkout_no_address")} <Link to="/account/addresses" style={{ textDecoration: "underline" }}>{t("checkout_add_address")}</Link></p>
+            ) : (
+              <div className="card" style={{ padding: 18 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>Full name</span>
+                    <input value={guestDetails.name} onChange={(e) => setGuestDetails((v) => ({ ...v, name: e.target.value }))} className="input" placeholder="Your name" />
+                  </label>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>Phone</span>
+                    <input value={guestDetails.phone} onChange={(e) => setGuestDetails((v) => ({ ...v, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} className="input" placeholder="10-digit mobile" inputMode="numeric" maxLength={10} />
+                  </label>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>Address line</span>
+                    <input value={guestDetails.line} onChange={(e) => setGuestDetails((v) => ({ ...v, line: e.target.value }))} className="input" placeholder="Street / house / apartment" />
+                  </label>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 12 }}>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>Landmark</span>
+                    <input value={guestDetails.landmark} onChange={(e) => setGuestDetails((v) => ({ ...v, landmark: e.target.value }))} className="input" placeholder="Nearby landmark" />
+                  </label>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>Pincode</span>
+                    <input value={guestDetails.pincode} onChange={(e) => setGuestDetails((v) => ({ ...v, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))} className="input" placeholder="6-digit pincode" inputMode="numeric" maxLength={6} />
+                  </label>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>City</span>
+                    <input value={guestDetails.city} onChange={(e) => setGuestDetails((v) => ({ ...v, city: e.target.value }))} className="input" placeholder="City" />
+                  </label>
+                  <label style={{ display: "block" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-soft)", display: "block", marginBottom: 5 }}>State</span>
+                    <input value={guestDetails.state} onChange={(e) => setGuestDetails((v) => ({ ...v, state: e.target.value }))} className="input" placeholder="State" />
+                  </label>
+                </div>
               </div>
-            ) : <p>{t("checkout_no_address")} <Link to="/account/addresses" style={{ textDecoration: "underline" }}>{t("checkout_add_address")}</Link></p>}
-            {user.addresses.length > 1 && (
+            )}
+            {user && user.addresses.length > 1 && (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
                 {user.addresses.map((a) => <button type="button" key={a.id} onClick={() => setAddrId(a.id)} className={a.id === address?.id ? "chip is-active" : "chip"}>{localizeAddressLabel(a.label, lang)}</button>)}
               </div>
@@ -95,13 +164,14 @@ export default function Checkout() {
 
           <Section title={t("payment_method")}>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {[["upi", t("upi")], ["card", t("card")], ["netbanking", t("netbanking")], ["cod", t("cod")]].map(([id, label]) => (
+              {[["upi", t("upi")], ["card", t("card")], ["netbanking", t("netbanking")], ["cod", t("cod")], ["razorpay", t("razorpay_prototype")]].map(([id, label]) => (
                 <button type="button" key={id} onClick={() => setPayment(id)} className={payment === id ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm"}>{label}</button>
               ))}
             </div>
+            {payment === "razorpay" && <p role="note" style={{ marginTop: 10, color: "var(--ink-soft)", fontSize: 12.5 }}>{t("checkout_prototype_payment_note")}</p>}
           </Section>
 
-          <button type="submit" disabled={placing || !address} className="btn btn-primary" style={{ width: "100%", marginTop: 8 }}>
+          <button type="submit" disabled={placing || (!user && !hasGuestAddress) || (!user && !address)} className="btn btn-primary" style={{ width: "100%", marginTop: 8 }}>
             {placing ? t("checkout_placing") : `${t("place_order")} · ${formatCurrency(total)}`}
           </button>
           {placementError && <p role="alert" className="auth-error" style={{ marginTop: 12 }}>{placementError}</p>}

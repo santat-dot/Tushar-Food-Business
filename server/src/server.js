@@ -77,6 +77,39 @@ async function seedCatalog() {
     })));
   }
 
+  const migrations = mongoose.connection.collection("catalog_migrations");
+  const starterCatalogMigration = "starter-catalog-30";
+  if (!await migrations.findOne({ _id: starterCatalogMigration })) {
+    const seedNames = seedProducts.map((product) => product.name);
+    const pruned = await FoodItem.deleteMany({
+      _id: /^c\d+$/,
+      name: { $nin: seedNames },
+    });
+    if (pruned.deletedCount > 0) {
+      console.log(`Removed ${pruned.deletedCount} retired seeded food items.`);
+    }
+
+    await Category.bulkWrite(seedCategories.map((category) => ({
+      updateOne: {
+        filter: { _id: category.slug },
+        update: { $set: { groups: category.groups } },
+      },
+    })));
+    await FoodItem.bulkWrite(seedProducts.map((product) => ({
+      updateOne: {
+        filter: { _id: /^c\d+$/, name: product.name },
+        update: {
+          $set: {
+            category: product.category,
+            categories: product.categories,
+            groups: product.groups,
+          },
+        },
+      },
+    })));
+    await migrations.insertOne({ _id: starterCatalogMigration, appliedAt: new Date() });
+  }
+
   if (await FoodItem.countDocuments() === 0) {
     await FoodItem.insertMany(seedProducts.map((product) => ({
       ...product,
@@ -291,6 +324,7 @@ admin.post("/food/category/:categoryId", route(async (req, res) => {
 
 admin.put("/food/:id", route(async (req, res) => {
   const update = {};
+  let assignedCategory = null;
   if (req.body?.foodName !== undefined) {
     const name = optionalString(req.body.foodName);
     if (!name) throw fail(400, "Food name cannot be empty.");
@@ -309,9 +343,21 @@ admin.put("/food/:id", route(async (req, res) => {
     const imageUrl = optionalString(req.body.imageUrl);
     update.images = imageUrl ? [imageUrl] : [];
   }
+  if (req.body?.categoryId !== undefined) {
+    const categoryId = optionalString(req.body.categoryId);
+    if (!categoryId) throw fail(400, "Choose a category.");
+    assignedCategory = await Category.findById(categoryId).lean();
+    if (!assignedCategory) throw fail(404, "Category not found.");
+    update.category = categoryId;
+    update.categories = [categoryId];
+    update.groups = assignedCategory.groups?.length
+      ? [{ category: categoryId, group: assignedCategory.groups[0] }]
+      : [];
+    update.hue = assignedCategory.hue;
+  }
   const item = await FoodItem.findByIdAndUpdate(req.params.id, { $set: update }, { new: true, runValidators: true });
   if (!item) throw fail(404, "Food item not found.");
-  const category = await Category.findById(item.category).lean();
+  const category = assignedCategory || await Category.findById(item.category).lean();
   res.json(toAdminFood(item, category));
 }));
 
@@ -402,6 +448,6 @@ app.use((error, _req, res, _next) => {
 
 await mongoose.connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/tushar_food_business");
 await seedCatalog();
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`Tushar Food Business API listening on port ${port}`);
 });

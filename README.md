@@ -3,13 +3,13 @@
 Run: `npm install` then `npm run dev` (or `npm run build`).
 
 ## What's new
-- **Landing page = shop**: `/` shows every packaged item, section by section, with 11 categories
+- **Landing page = shop**: `/` shows the 30-item starter catalog, section by section, with 11 categories
   (Papad & Fryums, Chakli & Snacks, Pickles, Laddoos & Sweets, Dry Fruits, Chutneys, Traditional Foods,
-  Healthy Foods, Flours & Bhajani, Masalas, Ready-to-Cook). Category pages have sub-group filters
-  (e.g. Chakli & Namkeen / Traditional Snacks / Cookies & Biscuits). Full item list lives in `src/data/catalog.js`.
-- **Login required for cart & checkout**: browsing is public; Add-to-cart / Cart / Checkout send visitors to `/login`
-  and bring them back afterwards.
-- **Address saved once**: entered during sign-up, reused automatically at checkout. Manage in *Account → Addresses*.
+  Healthy Foods, Flours & Bhajani, Masalas, Ready-to-Cook). The initial category allocation is 3, 4, 3, 4, 3,
+  2, 3, 2, 2, 2, and 2 items respectively. Category pages have sub-group filters, and the admin lets you
+  reassign products and see each category's live item count. The starter list lives in `src/data/catalog.js`.
+- **No login gate for prototype**: browsing, cart, and checkout all work without any sign-in or sign-up flow.
+- **Address saved once**: available in the account area for prototype convenience and reused automatically at checkout. Manage in *Account → Addresses*.
 - **Reorder for bulk buyers**: *Reorder now* (straight to checkout), *Edit & reorder*, "Order again" strip on the
   home page, and named **saved bulk lists** (Account → Orders). Items use today's price/availability.
 - **Discounts**: `/offers` page, announcement bar, offer badges on products, festival offers applied automatically
@@ -42,8 +42,8 @@ API and MongoDB database.
 5. Deploy and verify that `https://<your-api>.onrender.com/health` reports `"status":"ok"`.
 
 Do not commit `.env` files, database URIs, or admin credentials. Use Render's environment settings for
-secrets. The API seeds its catalog on first startup only when the database's category or food collection is
-empty.
+secrets. A fresh database starts with the 30-item catalog. The API also applies a one-time migration to remove
+retired seeded items from an existing catalog while preserving admin-added products and saved orders.
 
 ### 2. Deploy the customer storefront on Vercel
 

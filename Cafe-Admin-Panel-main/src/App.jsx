@@ -1,13 +1,13 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import FoodItems from "./pages/FoodItems";
 import Orders from "./pages/Orders";
+import Login from "./pages/Login";
 import GalleryManagement from "./components/GalleryManagement";
 import Navbar from "./components/Navbar";
-import Login from "./pages/Login";
-import RequireAdmin from "./components/RequireAdmin";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
+import { useAdminAuth } from "./context/useAdminAuth";
 
 function AdminLayout() {
   return (
@@ -18,11 +18,19 @@ function AdminLayout() {
   );
 }
 
+function RequireAdmin() {
+  const { isAuthenticated } = useAdminAuth();
+  const location = useLocation();
+  return isAuthenticated
+    ? <Outlet />
+    : <Navigate to="/login" replace state={{ from: location }} />;
+}
+
 function App() {
   return (
     <div className="admin-app">
-      <BrowserRouter>
-        <AdminAuthProvider>
+      <AdminAuthProvider>
+        <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route element={<RequireAdmin />}>
@@ -36,8 +44,8 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </AdminAuthProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </AdminAuthProvider>
     </div>
   );
 }

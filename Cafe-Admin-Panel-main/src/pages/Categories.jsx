@@ -4,6 +4,7 @@ import CategoryForm from "../components/CategoryForm";
 
 function Categories() {
   const [categories, setCategories] = useState([]);
+  const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -21,8 +22,17 @@ function Categories() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/category");
-      setCategories(response.data);
+      const [categoryResponse, foodResponse] = await Promise.all([
+        api.get("/category"),
+        api.get("/food"),
+      ]);
+      const counts = foodResponse.data.reduce((result, item) => {
+        const categoryId = item.category?.id;
+        if (categoryId) result[categoryId] = (result[categoryId] || 0) + 1;
+        return result;
+      }, {});
+      setCategories(categoryResponse.data);
+      setCategoryCounts(counts);
       setError("");
     } catch (err) {
       setError("Failed to fetch categories");
@@ -34,6 +44,7 @@ function Categories() {
 
   const handleCategoryAdded = (newCategory) => {
     setCategories([...categories, newCategory]);
+    setCategoryCounts((current) => ({ ...current, [newCategory.id]: 0 }));
   };
 
   const handleDelete = async (category) => {
@@ -64,9 +75,9 @@ function Categories() {
       await api.delete(`/category/${categoryToDelete.id}`, {
         data: { replacementCategoryId },
       });
-      setCategories((current) => current.filter((cat) => cat.id !== categoryToDelete.id));
       setCategoryToDelete(null);
       setReplacementCategoryId("");
+      await fetchCategories();
     } catch (err) {
       setDeleteError(err.response?.data?.message || err.message || "Failed to move food items and delete category.");
       console.error("Error moving food items and deleting category:", err);
@@ -330,7 +341,7 @@ function Categories() {
   };
 
   return (
-    <div style={containerStyle}>
+    <div className="admin-page categories-page" style={containerStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>🏷️ Manage Categories</h1>
         <p style={subtitleStyle}>Create and organize your food categories</p>
@@ -548,6 +559,9 @@ function Categories() {
                               )}
                             </div>
                             <h3 style={categoryNameStyle}>{category.categoryName}</h3>
+                            <p style={{ margin: "0.25rem 0 0.75rem", color: "#66714A", fontWeight: "600" }}>
+                              {categoryCounts[category.id] || 0} food items
+                            </p>
                             <p style={categoryIdStyle}>ID: #{category.id}</p>
                           </div>
 

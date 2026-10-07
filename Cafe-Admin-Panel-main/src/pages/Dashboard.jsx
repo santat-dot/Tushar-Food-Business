@@ -36,7 +36,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #F8F3E9 0%, #EEE4D0 100%)", padding: "0", margin: "0" }}>
+    <div className="admin-page dashboard-page" style={{ minHeight: "100vh", background: "linear-gradient(135deg, #F8F3E9 0%, #EEE4D0 100%)", padding: "0", margin: "0" }}>
       <div className="dashboard-content" style={{ maxWidth: "1400px", margin: "0 auto", padding: "3rem 2rem" }}>
         {/* Premium Header */}
         <div className="dashboard-hero" style={{ marginBottom: "3rem", background: "linear-gradient(135deg, #2B2118 0%, #3A1F14 100%)", borderRadius: "24px", padding: "3.5rem 2.5rem", color: "#fff", boxShadow: "0 16px 40px -4px rgba(43, 33, 24, 0.35)", border: "2px solid #C68E17" }}>

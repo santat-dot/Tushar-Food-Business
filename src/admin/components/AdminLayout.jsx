@@ -1,6 +1,7 @@
-import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { useAdminAuth } from "../AdminAuthContext";
+import { NavLink, Outlet } from "react-router-dom";
 import "../admin.css";
+
+const adminRedirect = "/admin";
 
 const NAV = [
   { group: "Overview", items: [["/admin", "Dashboard", true]] },
@@ -52,9 +53,6 @@ const NAV = [
 ];
 
 export default function AdminLayout() {
-  const { isAdmin } = useAdminAuth();
-  if (!isAdmin) return <Navigate to="/admin/login" replace />;
-
   return (
     <div className="admin">
       <aside className="admin-sidebar">

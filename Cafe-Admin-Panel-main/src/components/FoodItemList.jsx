@@ -3,6 +3,7 @@ import api from "../api/api";
 
 function FoodItemList() {
   const [foodItems, setFoodItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -11,6 +12,7 @@ function FoodItemList() {
     description: "",
     price: "",
     imageUrl: "",
+    categoryId: "",
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
@@ -22,8 +24,12 @@ function FoodItemList() {
   const fetchFoodItems = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/food");
-      setFoodItems(response.data);
+      const [foodResponse, categoryResponse] = await Promise.all([
+        api.get("/food"),
+        api.get("/category"),
+      ]);
+      setFoodItems(foodResponse.data);
+      setCategories(categoryResponse.data);
       setError("");
     } catch (err) {
       setError("Failed to fetch food items");
@@ -53,6 +59,7 @@ function FoodItemList() {
       description: item.description || "",
       price: item.price || "",
       imageUrl: item.imageUrl || "",
+      categoryId: item.category?.id || "",
     });
     setEditError("");
   };
@@ -80,6 +87,7 @@ function FoodItemList() {
         description: editFormData.description,
         price: parseFloat(editFormData.price) || 0,
         imageUrl: editFormData.imageUrl,
+        categoryId: editFormData.categoryId,
       };
 
       await api.put(`/food/${itemId}`, updatedData);
@@ -187,6 +195,34 @@ function FoodItemList() {
                         <h4 style={{ margin: "0 0 15px 0", color: "#2B2118", fontSize: "1.1rem" }}>
                           Edit Food Item
                         </h4>
+
+                        <div style={{ marginBottom: 10 }}>
+                          <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                            Category
+                          </label>
+                          <select
+                            name="categoryId"
+                            value={editFormData.categoryId}
+                            onChange={handleEditChange}
+                            style={{
+                              width: "100%",
+                              padding: 8,
+                              border: "1px solid #ccc",
+                              borderRadius: 4,
+                              fontSize: 14,
+                              boxSizing: "border-box",
+                            }}
+                            disabled={editLoading}
+                            required
+                          >
+                            <option value="">Select a category</option>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.categoryName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
                         <div style={{ marginBottom: 10 }}>
                           <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
@@ -381,4 +417,3 @@ function FoodItemList() {
 }
 
 export default FoodItemList;
-

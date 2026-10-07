@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../api/api";
+import { printMonthlySalesReport } from "../utils/printMonthlySalesReport";
 
 function Orders() {
   const [orders, setOrders] = useState([]);
+  const [deliveredOrders, setDeliveredOrders] = useState([]);
+  const [reportMonth, setReportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterStatus, setFilterStatus] = useState("PENDING");
@@ -11,15 +17,17 @@ function Orders() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      let response;
       console.log(`Fetching orders with filter: ${filterStatus}`);
-      if (filterStatus === "ALL") {
-        response = await api.get("/order");
-      } else {
-        response = await api.get(`/order/status/${filterStatus}`);
-      }
+      const orderRequest = filterStatus === "ALL"
+        ? api.get("/order")
+        : api.get(`/order/status/${filterStatus}`);
+      const deliveredRequest = filterStatus === "DELIVERED"
+        ? orderRequest
+        : api.get("/order/status/DELIVERED");
+      const [response, deliveredResponse] = await Promise.all([orderRequest, deliveredRequest]);
       console.log("Orders received:", response.data);
       setOrders(response.data);
+      setDeliveredOrders(deliveredResponse.data);
       setError("");
     } catch (err) {
       const errorMessage = "Failed to fetch orders";
@@ -40,6 +48,10 @@ function Orders() {
     try {
       const response = await api.put(`/order/${orderId}/status/${newStatus}`);
       setOrders((current) => current.map((order) => order.id === orderId ? response.data : order));
+      setDeliveredOrders((current) => {
+        const remaining = current.filter((order) => order.id !== orderId);
+        return newStatus === "DELIVERED" ? [...remaining, response.data] : remaining;
+      });
       setSelectedOrder(null);
       alert("Order status updated successfully!");
     } catch (err) {
@@ -68,6 +80,18 @@ function Orders() {
   }, [fetchOrders]);
 
   const sortedOrders = [...orders].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const [reportYear, reportMonthNumber] = reportMonth.split("-").map(Number);
+  const monthlyDeliveredOrders = deliveredOrders.filter((order) => {
+    const date = new Date(order.createdAt || `${order.date}T00:00:00`);
+    return !Number.isNaN(date.getTime())
+      && date.getFullYear() === reportYear
+      && date.getMonth() + 1 === reportMonthNumber;
+  });
+  const monthlyRevenue = monthlyDeliveredOrders.reduce((total, order) => total + (Number(order.totalPrice) || 0), 0);
+  const reportMonthLabel = new Date(reportYear, reportMonthNumber - 1, 1).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
 
   const containerStyle = {
     maxWidth: "1400px",
@@ -198,18 +222,46 @@ function Orders() {
 
   if (loading) {
     return (
-      <div style={containerStyle}>
+      <div className="admin-page orders-page" style={containerStyle}>
         <p style={{ textAlign: "center", color: "#5B5044" }}>Loading orders...</p>
       </div>
     );
   }
 
   return (
-    <div style={containerStyle}>
+    <div className="admin-page orders-page" style={containerStyle}>
       <div className="orders-header" style={headerStyle}>
         <h1 style={titleStyle}>📦 Orders Management</h1>
         <p style={subtitleStyle}>Track and manage customer orders</p>
       </div>
+
+      <section className="monthly-sales-report" aria-label="Monthly sales revenue report">
+        <div>
+          <h2>Monthly sales revenue</h2>
+          <p>Delivered orders placed in {reportMonthLabel}. Prototype payments are not collected.</p>
+        </div>
+        <label>
+          Report month
+          <input type="month" required value={reportMonth} onChange={(event) => {
+            if (event.target.value) setReportMonth(event.target.value);
+          }} />
+        </label>
+        <div className="monthly-sales-total">
+          <span>{monthlyDeliveredOrders.length} delivered orders</span>
+          <strong>₹{monthlyRevenue.toFixed(2)}</strong>
+        </div>
+        <button
+          type="button"
+          className="monthly-sales-download"
+          onClick={() => {
+            if (!printMonthlySalesReport(reportMonth, monthlyDeliveredOrders)) {
+              window.alert("Allow pop-ups for this site to print or save the monthly report.");
+            }
+          }}
+        >
+          Print monthly report / Save as PDF
+        </button>
+      </section>
 
       <div className="orders-filters" style={filterContainerStyle}>
         <button

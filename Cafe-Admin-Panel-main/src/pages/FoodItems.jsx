@@ -40,7 +40,7 @@ function FoodItems() {
   };
 
   return (
-    <div style={containerStyle}>
+    <div className="admin-page food-items-page" style={containerStyle}>
       <div>
         <h1>🍽️ Manage Food Items</h1>
         <p style={{ fontSize: "1.1rem", color: "#5B5044", marginTop: "0.5rem" }}>

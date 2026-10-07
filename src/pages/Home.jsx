@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +13,8 @@ import OfferCard from "../components/OfferCard";
 import ReorderButtons from "../components/ReorderButtons";
 import StarRating from "../components/StarRating";
 
+const heroSlideSlugs = ["traditional-foods", "healthy-foods", "chakli-snacks"];
+
 export default function Home() {
   const { t, lang } = useLanguage();
   const { user } = useAuth();
@@ -20,37 +23,65 @@ export default function Home() {
   const shownOffers = [...live, ...upcomingOffers()].slice(0, 3);
   const lastOrder = user ? orders[0] : null;
   const bestsellers = products.filter((p) => p.badge === "Bestseller" && p.availability === "available").slice(0, 4);
+  const heroSlides = heroSlideSlugs.map((slug) => categories.find((category) => category.slug === slug)).filter(Boolean);
+  const [activeHeroSlide, setActiveHeroSlide] = useState(0);
+
+  useEffect(() => {
+    if (heroSlides.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const interval = window.setInterval(() => {
+      setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
+    }, 5500);
+    return () => window.clearInterval(interval);
+  }, [heroSlides.length]);
+
+  const moveHeroSlide = (direction) => {
+    setActiveHeroSlide((current) => (current + direction + heroSlides.length) % heroSlides.length);
+  };
 
   return (
     <div>
       {/* HERO */}
       <section className="hero">
-        <div className="container hero-grid">
-          <div>
-            <div className="eyebrow">{t("hero_eyebrow")}</div>
-            <h1>{t("hero_title_store")}</h1>
-            <p>{t("hero_description", { count: products.length })}</p>
-            <div className="hero-cta">
-              <a href="#categories" className="btn btn-primary">{t("hero_shop_categories")}</a>
-              <Link to="/offers" className="btn btn-outline">🔥 {t("hero_view_offers")}</Link>
-              {!user && <Link to="/signup" className="btn btn-ghost" style={{ textDecoration: "underline" }}>{t("hero_create_account")}</Link>}
-            </div>
-            <div className="hero-trust">
-              {["hero_vegetarian", "hero_no_preservatives", "hero_saved_address", "hero_reorder"].map((key) => <span key={key}>✓ {t(key)}</span>)}
-            </div>
-          </div>
-          <div className="hero-mosaic" aria-hidden="true">
-            {categories.slice(0, 6).map((c) => (
-              <Link key={c.slug} to={`/category/${c.slug}`} className="mosaic-tile" style={{
-                "--h": c.hue,
-                backgroundImage: `linear-gradient(160deg, rgba(255,255,255,0.18), rgba(38,26,18,0.52)), url(${c.image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                color: "#fff",
-                textShadow: "0 2px 16px rgba(0,0,0,0.35)"
-              }}><span>{c.emoji}</span><b>{localizeCategoryName(c, lang)}</b></Link>
-            ))}
-          </div>
+        <div className="hero-carousel container" role="region" aria-label="Featured food">
+          {heroSlides.length > 0 && (() => {
+            const slide = heroSlides[activeHeroSlide];
+            return (
+              <article key={slide.slug} className="hero-slide">
+                <img className="hero-slide-image" src={slide.image} alt="" fetchpriority="high" />
+                <div className="hero-slide-shade" />
+                <div className="hero-slide-content">
+                  <Link className="eyebrow hero-category-link" to={`/category/${slide.slug}`}>{t("hero_eyebrow")} · {localizeCategoryName(slide, lang)} →</Link>
+                  <h1>{t("hero_title_store")}</h1>
+                  <p>{t("hero_description", { count: products.length })}</p>
+                  <div className="hero-cta">
+                    <a href="#categories" className="btn btn-primary">{t("hero_shop_categories")}</a>
+                    <Link to="/offers" className="btn btn-outline">🔥 {t("hero_view_offers")}</Link>
+                  </div>
+                  <div className="hero-trust">
+                    {["hero_vegetarian", "hero_no_preservatives", "hero_saved_address", "hero_reorder"].map((key) => <span key={key}>✓ {t(key)}</span>)}
+                  </div>
+                </div>
+              </article>
+            );
+          })()}
+          {heroSlides.length > 1 && (
+            <>
+              <button className="hero-arrow hero-arrow-previous" type="button" onClick={() => moveHeroSlide(-1)} aria-label="Previous featured image">‹</button>
+              <button className="hero-arrow hero-arrow-next" type="button" onClick={() => moveHeroSlide(1)} aria-label="Next featured image">›</button>
+              <div className="hero-dots" aria-label="Choose featured image">
+                {heroSlides.map((slide, index) => (
+                  <button
+                    key={slide.slug}
+                    className={index === activeHeroSlide ? "hero-dot is-active" : "hero-dot"}
+                    type="button"
+                    onClick={() => setActiveHeroSlide(index)}
+                    aria-label={`Show featured image ${index + 1}`}
+                    aria-current={index === activeHeroSlide ? "true" : undefined}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -89,7 +120,6 @@ export default function Home() {
                 color: "#fff",
                 textShadow: "0 2px 16px rgba(0,0,0,0.35)"
               }}>
-                <span className="cat-tile-emoji">{c.emoji}</span>
                 <h4>{localizeCategoryName(c, lang)}</h4>
                 <small>{t("unit_items", { count: productsInCategory(c.slug).length })}</small>
               </Link>
@@ -114,11 +144,11 @@ export default function Home() {
           <section key={c.slug} id={c.slug} className="section cat-section" style={{ background: idx % 2 ? "var(--cream-deep)" : "transparent" }}>
             <div className="container">
               <div className="section-head">
-                <div><div className="eyebrow">{c.emoji} {t("home_items", { count: items.length })}</div><h2 className="section-title">{localizeCategoryName(c, lang)}</h2></div>
+                <div><div className="eyebrow">{t("home_items", { count: items.length })}</div><h2 className="section-title">{localizeCategoryName(c, lang)}</h2></div>
                 <Link to={`/category/${c.slug}`} className="link-more">{t("home_view_all", { count: items.length })} →</Link>
               </div>
-              <div className="product-grid">{items.slice(0, 8).map((p) => <ProductCard key={p.id} product={p} />)}</div>
-              {items.length > 8 && <div style={{ textAlign: "center", marginTop: 28 }}><Link to={`/category/${c.slug}`} className="btn btn-outline">{t("home_see_all", { category: localizeCategoryName(c, lang) })}</Link></div>}
+              <div className="product-grid">{items.slice(0, 5).map((p) => <ProductCard key={p.id} product={p} />)}</div>
+              {items.length > 5 && <div style={{ textAlign: "center", marginTop: 28 }}><Link to={`/category/${c.slug}`} className="btn btn-outline">{t("home_see_all", { category: localizeCategoryName(c, lang) })}</Link></div>}
             </div>
           </section>
         );

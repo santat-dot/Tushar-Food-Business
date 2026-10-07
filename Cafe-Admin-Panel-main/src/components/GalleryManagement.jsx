@@ -227,7 +227,7 @@ function GalleryManagement() {
   }
 
   return (
-    <div style={containerStyle}>
+    <div className="admin-page gallery-page" style={containerStyle}>
       <h2 style={headingStyle}>🎬 Gallery Management</h2>
 
       <div style={formContainerStyle}>

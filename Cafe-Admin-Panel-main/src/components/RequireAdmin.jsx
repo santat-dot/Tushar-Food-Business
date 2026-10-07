@@ -1,8 +1,5 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAdminAuth } from "../context/useAdminAuth";
+import { Outlet } from "react-router-dom";
 
 export default function RequireAdmin() {
-  const { isAuthenticated } = useAdminAuth();
-  const location = useLocation();
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace state={{ from: location }} />;
+  return <Outlet />;
 }

@@ -4,6 +4,7 @@ import { useOrders } from "../../context/OrdersContext";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import ReorderButtons from "../../components/ReorderButtons";
+import { downloadOrderReceipt } from "../../utils/printOrderReceipt";
 
 export default function Orders() {
   const { t, formatDate, formatCurrency } = useLanguage();
@@ -53,6 +54,9 @@ export default function Orders() {
           <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
             <ReorderButtons items={o.items} />
             <Link to={`/account/orders/${o.id}`} className="btn btn-outline btn-sm">{t("orders_details")}</Link>
+            <button className="btn btn-outline btn-sm" type="button" onClick={() => {
+              if (!downloadOrderReceipt(o)) window.alert(t("receipt_download_failed"));
+            }}>{t("download_order_receipt")}</button>
             {naming === o.id ? (
               <span style={{ display: "inline-flex", gap: 6 }}>
                 <input className="input" style={{ padding: "7px 10px", width: 170 }} autoFocus placeholder={t("orders_list_name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} />

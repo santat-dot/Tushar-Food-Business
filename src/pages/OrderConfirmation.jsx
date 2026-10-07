@@ -2,6 +2,7 @@ import { useParams, useLocation, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { demoOrders } from "../data/orders";
 import ReorderButtons from "../components/ReorderButtons";
+import { downloadOrderReceipt } from "../utils/printOrderReceipt";
 
 export default function OrderConfirmation() {
   const { id } = useParams();
@@ -36,6 +37,14 @@ export default function OrderConfirmation() {
         <Row label={t("payment_method")} value={order.payment} />
         <Row label={t("address")} value={order.address} />
         <Row label={t("delivery_slot")} value={order.slot} />
+      </div>
+
+      <div style={{ marginBottom: 20, textAlign: "center" }}>
+        <button className="btn btn-outline" type="button" onClick={() => {
+          if (!downloadOrderReceipt(order)) window.alert(t("receipt_download_failed"));
+        }}>
+          {t("download_order_receipt")}
+        </button>
       </div>
 
       <div style={{ marginBottom: 16, textAlign: "center" }}><p style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 8 }}>{t("confirmation_reorder_prompt")}</p><div style={{ display: "inline-block" }}><ReorderButtons items={order.items} compact /></div></div>

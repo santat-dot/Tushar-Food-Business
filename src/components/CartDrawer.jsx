@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -6,7 +7,7 @@ export default function CartDrawer({ open, onClose }) {
   const { items, updateQty, removeItem, subtotal, itemCount } = useCart();
   const { t, formatCurrency } = useLanguage();
 
-  return (
+  return createPortal(
     <>
       <div
         onClick={onClose}
@@ -14,17 +15,17 @@ export default function CartDrawer({ open, onClose }) {
       />
       <aside
         style={{
-          position: "fixed", top: 0, right: 0, height: "100%", width: "min(420px, 100%)", background: "var(--paper)",
-          transform: open ? "translateX(0)" : "translateX(100%)", transition: "transform .25s ease", zIndex: 61,
+          position: "fixed", inset: "0 0 0 auto", height: "100dvh", width: "min(420px, 100%)", minHeight: 0, background: "var(--paper)",
+          transform: open ? "translateX(0)" : "translateX(100%)", transition: "transform .25s ease", zIndex: 61, overflow: "hidden",
           display: "flex", flexDirection: "column", boxShadow: "-10px 0 30px rgba(0,0,0,0.12)",
         }}
         aria-hidden={!open}
       >
-        <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ flexShrink: 0, padding: "18px 20px", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ fontSize: 19 }}>{t("cart_title")} ({itemCount})</h3>
           <button onClick={onClose} aria-label={t("common_close")} style={{ background: "none", border: "none", fontSize: 20 }}>✕</button>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "12px 20px" }}>
           {items.length === 0 ? (
             <div className="empty-state">
               <h3>{t("cart_empty")}</h3>
@@ -52,15 +53,16 @@ export default function CartDrawer({ open, onClose }) {
           ))}
         </div>
         {items.length > 0 && (
-          <div style={{ padding: 20, borderTop: "1px solid var(--line)" }}>
+          <div style={{ flexShrink: 0, padding: "20px 20px calc(20px + env(safe-area-inset-bottom))", borderTop: "1px solid var(--line)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 15 }}>
               <span>{t("subtotal")}</span><strong>{formatCurrency(subtotal)}</strong>
             </div>
             <Link to="/cart" onClick={onClose} className="btn btn-outline" style={{ width: "100%", marginBottom: 8 }}>{t("cart_title")}</Link>
-            <Link to="/checkout" onClick={onClose} className="btn btn-primary" style={{ width: "100%" }}>{t("proceed_checkout")}</Link>
+            <Link to="/checkout" onClick={onClose} className="btn btn-primary" style={{ width: "100%" }}>{t("bills_and_payments")}</Link>
           </div>
         )}
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }

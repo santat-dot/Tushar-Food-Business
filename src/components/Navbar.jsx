@@ -75,24 +75,21 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <div className="auth-btns">
-              <Link to="/login" className="btn btn-outline btn-sm">{t("nav_login")}</Link>
-              <Link to="/signup" className="btn btn-primary btn-sm">{t("nav_signup")}</Link>
-            </div>
+            <Link to="/account" className="btn btn-primary btn-sm">{t("nav_my_account")}</Link>
           )}
         </div>
       </div>
 
       <div className="cat-bar"><div className="container cat-bar-inner">
         {categories.map((c) => (
-          <NavLink key={c.slug} to={`/category/${c.slug}`} className={({ isActive }) => (isActive ? "cat-link is-active" : "cat-link")}>{c.emoji} {localizeCategoryName(c, lang)}</NavLink>
+          <NavLink key={c.slug} to={`/category/${c.slug}`} className={({ isActive }) => (isActive ? "cat-link is-active" : "cat-link")}>{localizeCategoryName(c, lang)}</NavLink>
         ))}
       </div></div>
 
       {menuOpen && (
         <div className="container mobile-menu">
           {links.map((l) => <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)}>{l.label}</Link>)}
-          {!user && <Link to="/signup" onClick={() => setMenuOpen(false)}><b>{t("nav_auth_combined")}</b></Link>}
+          <Link to="/account" onClick={() => setMenuOpen(false)}><b>{t("nav_my_account")}</b></Link>
         </div>
       )}
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />

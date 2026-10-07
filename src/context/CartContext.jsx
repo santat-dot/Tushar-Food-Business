@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { useLanguage } from "./LanguageContext";
 import { getProductById } from "../data/products";
@@ -12,11 +11,9 @@ const PURCHASABLE = ["available", "low-stock", "limited"];
 export function CartProvider({ children }) {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const location = useLocation();
   const email = user?.email;
-  const cartKey = email ? `tfb_cart:${email}` : null;
-  const savedKey = email ? `tfb_saved:${email}` : null;
+  const cartKey = email ? `tfb_cart:${email}` : "tfb_cart:guest";
+  const savedKey = email ? `tfb_saved:${email}` : "tfb_saved:guest";
 
   const [items, setItems] = useState(() => (cartKey ? load(cartKey) : []));
   const [savedForLater, setSavedForLater] = useState(() => (savedKey ? load(savedKey) : []));
@@ -30,17 +27,12 @@ export function CartProvider({ children }) {
 
   const showToast = useCallback((message) => { setToast(message); setTimeout(() => setToast(null), 2600); }, []);
 
-  // Cart & ordering need an account. Send visitors to login and bring them back.
-  const requireLogin = useCallback((message = t("auth_cart_login_prompt")) => {
-    if (user) return true;
-    navigate("/login", { state: { from: location.pathname + location.search, message } });
-    return false;
-  }, [user, navigate, location, t]);
+  // Prototype: no sign-in gate required for cart or ordering flows.
+  const requireLogin = useCallback(() => true, []);
 
   const toLine = (product, qty) => ({ id: product.id, slug: product.slug, name: product.name, image: product.images?.[0], price: product.price, mrp: product.mrp ?? product.price, weight: product.weight, qty });
 
   const addItem = useCallback((product, qty = 1) => {
-    if (!requireLogin()) return false;
     setItems((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       if (existing) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty, price: product.price } : i));
@@ -48,11 +40,10 @@ export function CartProvider({ children }) {
     });
     showToast(t("cart_item_added", { name: product.name }));
     return true;
-  }, [requireLogin, showToast, t]);
+  }, [showToast, t]);
 
   // Used by "Reorder": re-adds every item of a past order at TODAY's price/availability.
   const addOrderItems = useCallback((orderItems, { replace = false } = {}) => {
-    if (!requireLogin()) return { added: 0, skipped: [] };
     const skipped = []; const lines = [];
     orderItems.forEach((oi) => {
       const p = getProductById(oi.productId);
@@ -67,7 +58,7 @@ export function CartProvider({ children }) {
       }, base);
     });
     return { added: lines.length, skipped };
-  }, [requireLogin]);
+  }, []);
 
   const removeItem = useCallback((id) => setItems((prev) => prev.filter((i) => i.id !== id)), []);
   const updateQty = useCallback((id, qty) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))), []);

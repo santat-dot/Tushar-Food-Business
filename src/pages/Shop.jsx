@@ -19,7 +19,7 @@ export default function Shop() {
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>{t("nav_shop")}</h1>
       <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "18px 0" }}>
         {categories.map((c) => (
-          <Link key={c.slug} to={`/category/${c.slug}`} className="chip" style={{ flexShrink: 0 }}>{c.emoji} {localizeCategoryName(c, lang)}</Link>
+          <Link key={c.slug} to={`/category/${c.slug}`} className="chip" style={{ flexShrink: 0 }}>{localizeCategoryName(c, lang)}</Link>
         ))}
       </div>
       <FilterSortBar f={f} resultCount={f.filtered.length} />
