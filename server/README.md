@@ -11,11 +11,15 @@ products and saved orders.
    `npm install --prefix server`.
 2. Copy `server/.env.example` to `server/.env`. Set a long, unique `JWT_SECRET` and a private
    `ADMIN_USERNAME` / `ADMIN_PASSWORD`. Keep this file out of source control.
+   For a trusted local development machine only, set `ADMIN_AUTH_DISABLED=true` to open the local
+   admin panel without signing in. The API ignores this setting in production; never enable it on a
+   publicly reachable development server.
 3. Ensure MongoDB is running and set `MONGODB_URI` if it is not available at the example local address.
 4. Start the API with `npm run api:dev`.
 5. In a second terminal, start the customer website with `npm run dev`.
 6. In another terminal, start the standalone admin with `npm --prefix Cafe-Admin-Panel-main run dev`,
-   then sign in at `http://localhost:5174/login`.
+   then open `http://localhost:5174`. The Vite development admin opens directly to the dashboard.
+   Production builds continue to require admin sign-in.
 
 The customer storefront refreshes the shared catalog on initial load, when it regains focus, and every 15 seconds.
 The browser catalog remains available as a read-only fallback if the API cannot be reached. Checkout requires the

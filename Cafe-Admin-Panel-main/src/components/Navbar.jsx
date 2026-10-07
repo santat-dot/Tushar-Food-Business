@@ -32,7 +32,7 @@ function Navbar() {
             📦 Orders
           </Link>
         </div>
-        <button className="admin-sign-out" onClick={signOut}>Sign out</button>
+        {!import.meta.env.DEV && <button className="admin-sign-out" onClick={signOut}>Sign out</button>}
       </div>
     </nav>
   );

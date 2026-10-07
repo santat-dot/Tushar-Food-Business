@@ -32,7 +32,7 @@ function App() {
       <AdminAuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={import.meta.env.DEV ? <Navigate to="/" replace /> : <Login />} />
             <Route element={<RequireAdmin />}>
               <Route element={<AdminLayout />}>
                 <Route path="/" element={<Dashboard />} />
